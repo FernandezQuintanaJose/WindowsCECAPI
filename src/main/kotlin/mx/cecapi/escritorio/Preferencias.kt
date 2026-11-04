@@ -29,7 +29,7 @@ class Preferencias(private val archivo: Path = carpetaDeDatos().resolve("prefere
     }
 
     var escalaTexto: Float
-        get() = datos.getProperty("escalaTexto")?.toFloatOrNull()?.coerceIn(ESCALA_MINIMA, ESCALA_MAXIMA) ?: 1f
+        get() = datos.getProperty("escalaTexto")?.toFloatOrNull()?.takeIf { it.isFinite() }?.coerceIn(ESCALA_MINIMA, ESCALA_MAXIMA) ?: 1f
         set(valor) = guardar("escalaTexto", valor.coerceIn(ESCALA_MINIMA, ESCALA_MAXIMA).toString())
 
     var vozActiva: Boolean

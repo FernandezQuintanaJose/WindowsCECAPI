@@ -51,7 +51,9 @@ class ControladorAsistente(
         val pregunta = texto.trim()
         if (pregunta.isEmpty() || esperando) return false
         val contexto = mensajes.filter { it.quien != Quien.AVISO }.takeLast(6).map {
-            (if (it.quien == Quien.PERSONA) "Persona: " else "Asistente: ") + it.texto.take(1000)
+            // El servidor acepta líneas de hasta 1000 caracteres, con el prefijo incluido.
+            val prefijo = if (it.quien == Quien.PERSONA) "Persona: " else "Asistente: "
+            prefijo + it.texto.take(1000 - prefijo.length)
         }
         mensajes += Mensaje(Quien.PERSONA, pregunta)
         esperando = true

@@ -100,13 +100,18 @@ class ClienteAsistente(
             PeticionPregunta.serializer(),
             PeticionPregunta(pregunta = pregunta, contexto = contexto.takeLast(20), conversacionId = conversacionId),
         )
-        val peticion = HttpRequest.newBuilder(URI.create("$base/preguntar"))
-            .timeout(esperaRespuesta)
-            .header("Content-Type", "application/json; charset=utf-8")
-            .header("Accept", "application/json")
-            .apply { if (clave.isNotBlank()) header("X-Clave-App", clave) }
-            .POST(HttpRequest.BodyPublishers.ofString(cuerpo))
-            .build()
+        // Una dirección o una clave mal escrita en local.properties no debe tumbar la conversación.
+        val peticion = try {
+            HttpRequest.newBuilder(URI.create("$base/preguntar"))
+                .timeout(esperaRespuesta)
+                .header("Content-Type", "application/json; charset=utf-8")
+                .header("Accept", "application/json")
+                .apply { if (clave.isNotBlank()) header("X-Clave-App", clave) }
+                .POST(HttpRequest.BodyPublishers.ofString(cuerpo))
+                .build()
+        } catch (e: IllegalArgumentException) {
+            return@withContext Resultado.Falla(Mensajes.SIN_SERVIDOR)
+        }
 
         repeat(INTENTOS) { intento ->
             try {
@@ -127,6 +132,8 @@ class ClienteAsistente(
             } catch (e: Exception) {
                 return Resultado.Falla(Mensajes.NO_DISPONIBLE)
             }
+            // Una respuesta en blanco se leería en silencio: es mejor avisar.
+            if (datos.respuesta.isBlank()) return Resultado.Falla(Mensajes.NO_DISPONIBLE)
             conversacionId = datos.conversacionId ?: conversacionId
             return Resultado.Respuesta(datos.respuesta, datos.hayMas, datos.proveedor)
         }
