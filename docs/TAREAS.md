@@ -9,7 +9,7 @@ Requiere JDK 21 y Windows 10 u 11 para el instalador.
 ```
 git clone https://github.com/FernandezQuintanaJose/WindowsCECAPI.git
 cd WindowsCECAPI
-git checkout qa/correcciones                # hasta que se fusione a main
+git checkout main                           # el trabajo ya está en main
 ./gradlew test                              # 23 pruebas, deben pasar
 ./gradlew run                               # abre la app
 ```

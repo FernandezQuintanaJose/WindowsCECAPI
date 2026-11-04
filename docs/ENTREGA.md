@@ -10,7 +10,7 @@ Revisión completa, hallazgos de todo el ecosistema y orden sugerido para la sem
 - **No se ha comprobado:** que el flujo `windows.yml` genere el `.exe`, que se instale en un equipo limpio, la voz en español ni los lectores de pantalla.
 
 ## Para entregar
-1. Fusionar `qa/correcciones` a `main`.
+1. ~~Fusionar `qa/correcciones` a `main`~~ (hecho el 4 nov 2026).
 2. GitHub, Settings, Secrets and variables, Actions: crear `CECAPI_SERVIDOR` y `CECAPI_CLAVE_APP` (cuando el servidor esté publicado).
 3. Ver correr `windows.yml` en GitHub e instalar el artefacto en un equipo Windows limpio.
 4. Probar: voz de Windows en español (Ajustes, Probar la voz), NVDA y JAWS (Java Access Bridge, `jabswitch -enable`) y Narrador.
