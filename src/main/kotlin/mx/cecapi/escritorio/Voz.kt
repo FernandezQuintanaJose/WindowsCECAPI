@@ -61,7 +61,38 @@ class VozDeWindows(private val velocidad: () -> Int) : Voz {
     }
 }
 
-/** En sistemas que no son Windows (desarrollo) no hay voz: la app sigue funcionando en silencio. */
+
+/** Síntesis de voz mediante eSpeak NG para desarrollo en Linux. */
+class VozDeLinux(private val velocidad: () -> Int) : Voz {
+    override val disponible = true
+    private var proceso: Process? = null
+
+    @Synchronized
+    override fun decir(texto: String) {
+        callar()
+        if (texto.isBlank()) return
+
+        proceso = try {
+            ProcessBuilder(
+                "espeak-ng",
+                "-v", "es",
+                "-a", "200",
+                "-s", (145 + velocidad().coerceIn(-5, 5) * 10).toString(),
+                "-p", "45",
+                texto
+            ).start()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    @Synchronized
+    override fun callar() {
+        proceso?.destroyForcibly()
+        proceso = null
+    }
+}
+
 object SinVoz : Voz {
     override val disponible = false
     override fun decir(texto: String) = Unit
@@ -69,4 +100,10 @@ object SinVoz : Voz {
 }
 
 fun crearVoz(preferencias: Preferencias): Voz =
-    if (System.getProperty("os.name").orEmpty().startsWith("Windows")) VozDeWindows { preferencias.velocidadVoz } else SinVoz
+    when {
+        System.getProperty("os.name").orEmpty().startsWith("Windows") ->
+            VozDeWindows { preferencias.velocidadVoz }
+        java.io.File("/usr/bin/espeak-ng").exists() ->
+            VozDeLinux { preferencias.velocidadVoz }
+        else -> SinVoz
+    }
