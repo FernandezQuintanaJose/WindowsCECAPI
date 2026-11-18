@@ -310,10 +310,17 @@ fun PantallaAjustes(
     escala: Float,
     vozActiva: Boolean,
     velocidad: Int,
+    volumen: Int,
+    tono: Int,
+    nombreVoz: String,
+    vocesDisponibles: List<String>,
     vozDisponible: Boolean,
     alCambiarEscala: (Float) -> Unit,
     alCambiarVoz: (Boolean) -> Unit,
     alCambiarVelocidad: (Int) -> Unit,
+    alCambiarVolumen: (Int) -> Unit,
+    alCambiarTono: (Int) -> Unit,
+    alCambiarNombreVoz: (String) -> Unit,
     alProbarVoz: () -> Unit,
     alVolver: () -> Unit,
 ) {
@@ -323,8 +330,9 @@ fun PantallaAjustes(
 
             Text("Tamaño del texto: ${(escala * 100).toInt()} por ciento", style = MaterialTheme.typography.titleLarge)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BotonGrande("Más chico", onClick = { alCambiarEscala(escala - 0.25f) }, habilitado = escala > Preferencias.ESCALA_MINIMA)
-                BotonGrande("Más grande", onClick = { alCambiarEscala(escala + 0.25f) }, habilitado = escala < Preferencias.ESCALA_MAXIMA)
+                BotonGrande("Más chico", onClick = { alCambiarEscala((escala - 0.1f).coerceAtLeast(Preferencias.ESCALA_MINIMA)) }, habilitado = escala > Preferencias.ESCALA_MINIMA)
+                BotonGrande("Más grande", onClick = { alCambiarEscala((escala + 0.1f).coerceAtMost(Preferencias.ESCALA_MAXIMA)) }, habilitado = escala < Preferencias.ESCALA_MAXIMA)
+                BotonGrande("Texto normal (100 %)", onClick = { alCambiarEscala(1f) }, habilitado = escala != 1f)
             }
 
             Text("Voz: " + if (!vozDisponible) "no disponible en este sistema" else if (vozActiva) "encendida" else "apagada", style = MaterialTheme.typography.titleLarge)
@@ -333,10 +341,45 @@ fun PantallaAjustes(
                     BotonGrande(if (vozActiva) "Apagar la voz" else "Encender la voz", onClick = { alCambiarVoz(!vozActiva) })
                     BotonGrande("Probar la voz", onClick = alProbarVoz)
                 }
-                Text("Velocidad de la voz: $velocidad (de -5 a 5)", style = MaterialTheme.typography.titleLarge)
+                Text("Al apagar la voz se silencian las lecturas automáticas. El botón de prueba puede reproducir audio manualmente.", style = MaterialTheme.typography.bodyMedium)
+                Text("Velocidad de la voz: $velocidad (de -10 a 10)", style = MaterialTheme.typography.titleLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BotonGrande("Más lenta", onClick = { alCambiarVelocidad(velocidad - 1) }, habilitado = velocidad > -5)
-                    BotonGrande("Más rápida", onClick = { alCambiarVelocidad(velocidad + 1) }, habilitado = velocidad < 5)
+                    BotonGrande("Más lenta", onClick = { alCambiarVelocidad(velocidad - 1) }, habilitado = velocidad > -10)
+                    BotonGrande("Más rápida", onClick = { alCambiarVelocidad(velocidad + 1) }, habilitado = velocidad < 10)
+                }
+                Text("Volumen de voz: $volumen % (más de 100 %: amplificación experimental)", style = MaterialTheme.typography.titleLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    BotonGrande("Bajar volumen", onClick = { alCambiarVolumen(volumen - 10) }, habilitado = volumen > 0)
+                    BotonGrande("Subir volumen", onClick = { alCambiarVolumen(volumen + 10) }, habilitado = volumen < 200)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    BotonGrande("Volumen medio (50 %)", onClick = { alCambiarVolumen(50) }, habilitado = volumen != 50)
+                    BotonGrande("Volumen normal (100 %)", onClick = { alCambiarVolumen(100) }, habilitado = volumen != 100)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    BotonGrande("Amplificar a 200 %", onClick = { alCambiarVolumen(200) }, habilitado = volumen != 200)
+                }
+                Text("Si falla la amplificación, la voz se reproducirá al 100 %. Aumenta gradualmente y evita volúmenes altos con audífonos.", style = MaterialTheme.typography.bodyMedium)
+                Text("Tono: $tono (de -50 a +50)", style = MaterialTheme.typography.titleLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    BotonGrande("Más grave", onClick = { alCambiarTono(tono - 10) }, habilitado = tono > -50)
+                    BotonGrande("Más agudo", onClick = { alCambiarTono(tono + 10) }, habilitado = tono < 50)
+                    BotonGrande("Tono normal", onClick = { alCambiarTono(0) }, habilitado = tono != 0)
+                }
+                Text("Tono experimental: Helena y Zira pueden ignorar este ajuste. Para un cambio audible de tono se necesitará otro motor de voz.", style = MaterialTheme.typography.bodyMedium)
+                Text("Voz seleccionada: ${nombreVoz.ifBlank { "Automática en español" }}", style = MaterialTheme.typography.titleLarge)
+                Text("Automática usa la voz española instalada (Helena en este equipo). Zira es una voz en inglés.", style = MaterialTheme.typography.bodyMedium)
+                if (vocesDisponibles.isNotEmpty()) {
+                    BotonGrande("Voz automática en español", onClick = { alCambiarNombreVoz("") })
+                    vocesDisponibles.forEach { opcion ->
+                        BotonGrande(
+                            if (opcion == nombreVoz) "$opcion (seleccionada)" else "Seleccionar $opcion",
+                            onClick = { alCambiarNombreVoz(opcion) },
+                            principal = opcion == nombreVoz,
+                        )
+                    }
+                } else {
+                    Text("No se pudo enumerar las voces. Se usará la predeterminada.", style = MaterialTheme.typography.bodyMedium)
                 }
             } else {
                 Text(
@@ -350,4 +393,40 @@ fun PantallaAjustes(
             BotonGrande("Volver al asistente", onClick = alVolver, principal = true)
         }
     }
+}
+
+
+/** Compatibilidad con las pruebas y llamadas anteriores a la ampliacion de ajustes.
+ * La interfaz principal usa la sobrecarga completa con volumen, tono y seleccion de voz.
+ */
+@Composable
+fun PantallaAjustes(
+    escala: Float,
+    vozActiva: Boolean,
+    velocidad: Int,
+    vozDisponible: Boolean,
+    alCambiarEscala: (Float) -> Unit,
+    alCambiarVoz: (Boolean) -> Unit,
+    alCambiarVelocidad: (Int) -> Unit,
+    alProbarVoz: () -> Unit,
+    alVolver: () -> Unit,
+) {
+    PantallaAjustes(
+        escala = escala,
+        vozActiva = vozActiva,
+        velocidad = velocidad,
+        volumen = 100,
+        tono = 0,
+        nombreVoz = "",
+        vocesDisponibles = emptyList(),
+        vozDisponible = vozDisponible,
+        alCambiarEscala = alCambiarEscala,
+        alCambiarVoz = alCambiarVoz,
+        alCambiarVelocidad = alCambiarVelocidad,
+        alCambiarVolumen = {},
+        alCambiarTono = {},
+        alCambiarNombreVoz = {},
+        alProbarVoz = alProbarVoz,
+        alVolver = alVolver,
+    )
 }

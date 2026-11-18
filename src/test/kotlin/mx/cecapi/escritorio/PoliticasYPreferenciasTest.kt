@@ -64,7 +64,7 @@ class PreferenciasTest {
         val otra = Preferencias(archivo)
         assertEquals(1.5f, otra.escalaTexto)
         assertFalse(otra.vozActiva)
-        assertEquals(5, otra.velocidadVoz, "la velocidad se limita a 5")
+        assertEquals(9, otra.velocidadVoz, "la velocidad se limita a 10")
         assertEquals(Aceptacion(Politicas.VERSION, fecha, true), otra.aceptacion)
         assertTrue(otra.aceptoVersion(Politicas.VERSION))
         assertFalse(otra.aceptoVersion("otra-version"), "una versión nueva pide aceptar otra vez")
