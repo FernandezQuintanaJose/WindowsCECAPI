@@ -36,7 +36,7 @@ Requiere JDK 21. El primer comando descarga Gradle y las dependencias.
 ./gradlew packageExe          # instalador .exe (solo en Windows)
 ```
 
-El instalador queda en `build/compose/binaries/main/exe/CECAPI-1.0.0.exe`. Se instala por usuario, sin permisos de administrador, y crea acceso en el menú Inicio.
+El instalador queda en `build/compose/binaries/main/exe/ALIA-1.0.0.exe`. Se instala por usuario, sin permisos de administrador, y crea acceso en el menú Inicio.
 
 ## Publicar una versión
 

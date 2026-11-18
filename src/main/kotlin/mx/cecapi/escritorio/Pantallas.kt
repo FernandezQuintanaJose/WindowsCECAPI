@@ -202,7 +202,7 @@ fun PantallaAsistente(controlador: ControladorAsistente, alAbrirAjustes: () -> U
     PantallaDividida(
         contenido = {
             Column(Modifier.fillMaxSize().padding(28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("Asistente de CECAPI", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
+                Text("ALIA, asistente de CECAPI", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
                 controlador.estado?.let {
                     Text(
                         it,
