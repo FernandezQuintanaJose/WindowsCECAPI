@@ -96,7 +96,7 @@ compose.desktop {
             description = "Asistente de CECAPI para personas ciegas y con baja visión"
             vendor = "Centro de Capacitación para Invidentes A. C."
             // java.net.http: cliente del servidor. jdk.accessibility: puente para lectores de pantalla.
-            modules("java.net.http", "jdk.accessibility")
+            modules("java.net.http", "jdk.accessibility", "jdk.httpserver")
             windows {
                 menuGroup = "CECAPI"
                 shortcut = true

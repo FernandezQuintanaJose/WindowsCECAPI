@@ -50,7 +50,7 @@ class VozDeWindows(private val preferencias: Preferencias) : Voz {
                     environment()["CECAPI_TONO"] = preferencias.tonoVoz.toString()
                     environment()["CECAPI_VOZ"] = preferencias.nombreVoz
                     redirectErrorStream(true)
-                    redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    redirectOutput(ProcessBuilder.Redirect.appendTo(java.io.File(System.getenv("APPDATA"), "CECAPI/voz-proceso.log").apply { parentFile.mkdirs() }))
                 }.start()
         } catch (_: Exception) { null }
     }
