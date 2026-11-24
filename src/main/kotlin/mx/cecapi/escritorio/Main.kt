@@ -57,6 +57,10 @@ fun App(preferencias: Preferencias, voz: Voz, controlador: ControladorAsistente)
     var escala by remember { mutableStateOf(preferencias.escalaTexto) }
     var vozActiva by remember { mutableStateOf(preferencias.vozActiva) }
     var velocidad by remember { mutableIntStateOf(preferencias.velocidadVoz) }
+    var volumen by remember { mutableIntStateOf(preferencias.volumenVoz) }
+    var tono by remember { mutableIntStateOf(preferencias.tonoVoz) }
+    var nombreVoz by remember { mutableStateOf(preferencias.nombreVoz) }
+    val vocesDisponibles = remember(voz) { voz.vocesDisponibles() }
     var aceptado by remember { mutableStateOf(preferencias.aceptoVersion(Politicas.VERSION)) }
     var enAjustes by remember { mutableStateOf(false) }
 
@@ -72,6 +76,10 @@ fun App(preferencias: Preferencias, voz: Voz, controlador: ControladorAsistente)
                 escala = escala,
                 vozActiva = vozActiva,
                 velocidad = velocidad,
+                volumen = volumen,
+                tono = tono,
+                nombreVoz = nombreVoz,
+                vocesDisponibles = vocesDisponibles,
                 vozDisponible = voz.disponible,
                 alCambiarEscala = { preferencias.escalaTexto = it; escala = preferencias.escalaTexto },
                 alCambiarVoz = {
@@ -80,7 +88,10 @@ fun App(preferencias: Preferencias, voz: Voz, controlador: ControladorAsistente)
                     if (!it) voz.callar()
                 },
                 alCambiarVelocidad = { preferencias.velocidadVoz = it; velocidad = preferencias.velocidadVoz },
-                alProbarVoz = { voz.decir("Así sueno con esta velocidad.") },
+                alCambiarVolumen = { preferencias.volumenVoz = it; volumen = preferencias.volumenVoz },
+                alCambiarTono = { preferencias.tonoVoz = it; tono = preferencias.tonoVoz },
+                alCambiarNombreVoz = { preferencias.nombreVoz = it; nombreVoz = preferencias.nombreVoz },
+                alProbarVoz = { voz.decir("Esta es una prueba de la voz seleccionada, con los nuevos ajustes.") },
                 alVolver = { enAjustes = false },
             )
             else -> PantallaAsistente(controlador, alAbrirAjustes = { enAjustes = true })

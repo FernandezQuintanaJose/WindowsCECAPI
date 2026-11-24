@@ -36,10 +36,24 @@ class Preferencias(private val archivo: Path = carpetaDeDatos().resolve("prefere
         get() = datos.getProperty("vozActiva")?.toBooleanStrictOrNull() ?: true
         set(valor) = guardar("vozActiva", valor.toString())
 
-    /** Velocidad de la voz de Windows, de -5 (lenta) a 5 (rápida). */
+    /** Velocidad System.Speech de -10 (lenta) a +10 (rapida). */
     var velocidadVoz: Int
-        get() = datos.getProperty("velocidadVoz")?.toIntOrNull()?.coerceIn(-5, 5) ?: 0
-        set(valor) = guardar("velocidadVoz", valor.coerceIn(-5, 5).toString())
+        get() = datos.getProperty("velocidadVoz")?.toIntOrNull()?.coerceIn(-10, 10) ?: 0
+        set(valor) = guardar("velocidadVoz", valor.coerceIn(-10, 10).toString())
+
+    var volumenVoz: Int
+        get() = datos.getProperty("volumenVoz")?.toIntOrNull()?.coerceIn(0, 200) ?: 100
+        set(valor) = guardar("volumenVoz", valor.coerceIn(0, 200).toString())
+
+    /** Tono SSML orientativo: de -50 a +50 por ciento. */
+    var tonoVoz: Int
+        get() = datos.getProperty("tonoVoz")?.toIntOrNull()?.coerceIn(-50, 50) ?: 0
+        set(valor) = guardar("tonoVoz", valor.coerceIn(-50, 50).toString())
+
+    /** Nombre exacto de una voz instalada; vacio = idioma espanol automatico. */
+    var nombreVoz: String
+        get() = datos.getProperty("nombreVoz").orEmpty()
+        set(valor) = guardar("nombreVoz", valor.take(200))
 
     var aceptacion: Aceptacion?
         get() {
@@ -80,7 +94,7 @@ class Preferencias(private val archivo: Path = carpetaDeDatos().resolve("prefere
     }
 
     companion object {
-        const val ESCALA_MINIMA = 1f
+        const val ESCALA_MINIMA = 0.5f
         const val ESCALA_MAXIMA = 2f
 
         /** %APPDATA%\CECAPI en Windows; ~/.config/cecapi en otros sistemas (para desarrollo). */
