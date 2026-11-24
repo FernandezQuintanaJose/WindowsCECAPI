@@ -110,7 +110,7 @@ fun App(preferencias: Preferencias, voz: Voz, controlador: ControladorAsistente,
     DisposableEffect(atajos) { onDispose { atajos?.pantalla = null } }
     LaunchedEffect(Unit) { controlador.despertar() }
     LaunchedEffect(aceptado) {
-        if (aceptado && preferencias.vozActiva) controlador.confirmar("Asistente CECAPI. Pulsa espacio con el foco en el micrófono para dictar. F1 para escuchar los atajos.")
+        if (aceptado && preferencias.vozActiva) controlador.confirmar("ALIA. Pulsa espacio con el foco en el micrófono para dictar. F1 para escuchar los atajos.")
     }
 
     TemaCecapi(escala) {

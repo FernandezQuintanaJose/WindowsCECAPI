@@ -1,6 +1,6 @@
-# CECAPI para Windows
+# ALIA para Windows
 
-App de escritorio del asistente de CECAPI para personas ciegas y con baja visión. Es la app de Android llevada a Windows; lo que no se puede hacer en una computadora se oculta (ver `docs/FUNCIONES.md`). Se distribuye solo como **instalador `.exe` en GitHub Releases**, sin Microsoft Store.
+App de escritorio de ALIA, el asistente de voz para personas ciegas y con baja visión. Es la app de Android llevada a Windows; lo que no se puede hacer en una computadora se oculta (ver `docs/FUNCIONES.md`). Se distribuye solo como **instalador `.exe` en GitHub Releases**, sin Microsoft Store.
 
 La ficha del proyecto está en `docs/FICHA.md` y las reglas comunes en `docs/FICHA_GLOBAL.md`.
 

@@ -64,5 +64,5 @@ jobs:
         run: |
           $archivos = (Get-ChildItem build/compose/binaries/main/exe/*).FullName
           gh release create "$env:ETIQUETA" $archivos `
-            --title "CECAPI para Windows $env:ETIQUETA" `
-            --notes "Instalador .exe de la app de CECAPI para Windows. Compara la suma SHA-256 del archivo .sha256 antes de instalar. Windows puede mostrar el aviso de SmartScreen porque la app todavía es nueva."
+            --title "ALIA para Windows $env:ETIQUETA" `
+            --notes "Instalador .exe de la app de ALIA para Windows. Compara la suma SHA-256 del archivo .sha256 antes de instalar. Windows puede mostrar el aviso de SmartScreen porque la app todavía es nueva."

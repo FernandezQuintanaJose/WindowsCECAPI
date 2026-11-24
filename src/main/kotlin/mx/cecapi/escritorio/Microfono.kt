@@ -30,7 +30,7 @@ class MicrofonoWindows {
             generacion
         }
         return withContext(Dispatchers.IO) {
-            if (!disponible) return@withContext CapturaVoz.Aviso("El micrófono de CECAPI requiere Windows.")
+            if (!disponible) return@withContext CapturaVoz.Aviso("El micrófono de ALIA requiere Windows.")
             var activo: Process? = null
             try {
                 val p = synchronized(this@MicrofonoWindows) {

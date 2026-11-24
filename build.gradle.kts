@@ -93,7 +93,7 @@ compose.desktop {
             targetFormats(TargetFormat.Exe, TargetFormat.Msi)
             packageName = "ALIA"
             packageVersion = project.version.toString()
-            description = "ALIA, asistente de CECAPI para personas ciegas y con baja visión"
+            description = "ALIA, asistente de voz para personas ciegas y con baja visión"
             vendor = "Centro de Capacitación para Invidentes A. C."
             // java.net.http: cliente del servidor. jdk.accessibility: puente para lectores de pantalla.
             modules("java.net.http", "jdk.accessibility", "jdk.httpserver")
