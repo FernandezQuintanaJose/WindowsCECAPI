@@ -50,7 +50,7 @@ fun main() = application {
             voz.callar()
             exitApplication()
         },
-        title = "CECAPI · Asistente",
+        title = "ALIA · Asistente",
         state = rememberWindowState(size = DpSize(1180.dp, 820.dp)),
         onPreviewKeyEvent = { evento ->
             // Atajos de toda la ventana: Esc calla la voz; Ctrl + R repite la última respuesta.

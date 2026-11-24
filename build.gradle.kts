@@ -91,14 +91,14 @@ compose.desktop {
         mainClass = "mx.cecapi.escritorio.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Exe, TargetFormat.Msi)
-            packageName = "CECAPI"
+            packageName = "ALIA"
             packageVersion = project.version.toString()
-            description = "Asistente de CECAPI para personas ciegas y con baja visión"
+            description = "ALIA, asistente de CECAPI para personas ciegas y con baja visión"
             vendor = "Centro de Capacitación para Invidentes A. C."
             // java.net.http: cliente del servidor. jdk.accessibility: puente para lectores de pantalla.
             modules("java.net.http", "jdk.accessibility", "jdk.httpserver")
             windows {
-                menuGroup = "CECAPI"
+                menuGroup = "ALIA"
                 shortcut = true
                 dirChooser = true
                 perUserInstall = true

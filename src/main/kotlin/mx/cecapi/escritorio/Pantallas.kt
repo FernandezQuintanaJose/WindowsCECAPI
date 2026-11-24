@@ -269,7 +269,7 @@ fun PantallaAsistente(
     PantallaDividida(
         contenido = {
             Column(Modifier.fillMaxSize().padding(28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("Asistente de CECAPI", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
+                Text("ALIA, asistente de CECAPI", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
                 Text("Lectura automática: ${if (lecturaAutomatica) "encendida" else "apagada"} (F6). F1: ayuda de teclado.", style = MaterialTheme.typography.bodyMedium)
                 if (modoPrueba) Text("MODO DE PRUEBA LOCAL · Respuestas simuladas, sin IA", color = Colores.Aviso, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                 controlador.estado?.let {
