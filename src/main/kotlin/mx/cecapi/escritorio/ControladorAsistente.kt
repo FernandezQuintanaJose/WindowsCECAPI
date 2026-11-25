@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 
 enum class Quien { PERSONA, ASISTENTE, AVISO }
@@ -57,7 +58,9 @@ class ControladorAsistente(
         }
         mensajes += Mensaje(Quien.PERSONA, pregunta)
         esperando = true
+        estado = "Procesando tu pregunta."
         voz.callar()
+        if (!vozActiva()) confirmar("Pregunta enviada. Lectura automática apagada. Pulsa Control R para escuchar la respuesta o F6 para encenderla.")
         trabajo = alcance.launch {
             val aviso = launch {
                 delay(avisoDespertarMs)
@@ -65,7 +68,7 @@ class ControladorAsistente(
                 if (vozActiva()) voz.decir(Mensajes.DESPERTANDO)
             }
             val resultado = cliente.preguntar(pregunta, contexto)
-            aviso.cancel()
+            aviso.cancelAndJoin()
             if (cliente.configurado) estado = null
             when (resultado) {
                 is Resultado.Respuesta -> {
@@ -84,9 +87,12 @@ class ControladorAsistente(
 
     /** Vuelve a decir la última respuesta (o el último aviso). */
     fun repetir() {
-        val ultimo = mensajes.lastOrNull { it.quien != Quien.PERSONA } ?: return
+        val ultimo = mensajes.lastOrNull { it.quien != Quien.PERSONA } ?: run { confirmar("Todavía no hay una respuesta para repetir."); return }
         voz.decir(ultimo.texto)
     }
+
+    /** Confirma una acción sin cambiar la preferencia de lectura automática. */
+    fun confirmar(texto: String) { if (texto.isNotBlank()) voz.decir(texto) }
 
     fun callar() = voz.callar()
 

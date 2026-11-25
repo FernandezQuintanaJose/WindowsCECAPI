@@ -1,6 +1,6 @@
-# CECAPI para Windows
+# ALIA para Windows
 
-App de escritorio del asistente de CECAPI para personas ciegas y con baja visión. Es la app de Android llevada a Windows; lo que no se puede hacer en una computadora se oculta (ver `docs/FUNCIONES.md`). Se distribuye solo como **instalador `.exe` en GitHub Releases**, sin Microsoft Store.
+App de escritorio de ALIA, el asistente de voz para personas ciegas y con baja visión. Es la app de Android llevada a Windows; lo que no se puede hacer en una computadora se oculta (ver `docs/FUNCIONES.md`). Se distribuye solo como **instalador `.exe` en GitHub Releases**, sin Microsoft Store.
 
 La ficha del proyecto está en `docs/FICHA.md` y las reglas comunes en `docs/FICHA_GLOBAL.md`.
 
@@ -36,7 +36,7 @@ Requiere JDK 21. El primer comando descarga Gradle y las dependencias.
 ./gradlew packageExe          # instalador .exe (solo en Windows)
 ```
 
-El instalador queda en `build/compose/binaries/main/exe/CECAPI-1.0.0.exe`. Se instala por usuario, sin permisos de administrador, y crea acceso en el menú Inicio.
+El instalador queda en `build/compose/binaries/main/exe/ALIA-1.0.0.exe`. Se instala por usuario, sin permisos de administrador, y crea acceso en el menú Inicio.
 
 ## Publicar una versión
 

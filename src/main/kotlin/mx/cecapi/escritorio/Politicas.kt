@@ -11,13 +11,13 @@ data class ParteDePolitica(val titulo: String, val parrafos: List<String>) {
  * (quien ya aceptó tendrá que aceptar de nuevo). Lo que va entre corchetes está pendiente de CECAPI.
  */
 object Politicas {
-    const val VERSION = "2026-10-30-borrador"
+    const val VERSION = "2026-11-25-borrador"
 
     val partes: List<ParteDePolitica> = listOf(
         ParteDePolitica(
             "Qué es el asistente",
             listOf(
-                "El asistente de CECAPI responde preguntas en español usando inteligencia artificial. Funciona en la página web, en la app para Android y en esta app para Windows.",
+                "ALIA responde preguntas en español usando inteligencia artificial. Funciona en la página web, en la app para Android y en esta app para Windows.",
                 "Las apps se descargan solo desde la página del asistente o desde GitHub: el archivo APK para Android y el archivo .exe para Windows. No están en Google Play ni en la Microsoft Store.",
                 "Es solo para personas de 18 años o más.",
             ),
@@ -42,6 +42,7 @@ object Politicas {
                 "Las preguntas que escribes o dices y las respuestas que recibes.",
                 "La fecha en que aceptas estas políticas y la versión que aceptaste.",
                 "Cuántas preguntas haces al día, para repartir el uso entre todas las personas.",
+                "En la app para Android, si activas el servicio de accesibilidad de ALIA, la app puede leer el contenido de la pantalla y tomar una captura temporal para leer su texto o describirla en voz alta. Esa captura se analiza en el teléfono, no se guarda y no se envía al servidor.",
             ),
         ),
         ParteDePolitica(

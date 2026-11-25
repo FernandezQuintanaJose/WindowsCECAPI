@@ -22,6 +22,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -181,14 +185,30 @@ fun PantallaPoliticas(voz: Voz, alAceptar: (Aceptacion) -> Unit) {
 // ------------------------------------------------------------------------------------ Asistente
 
 @Composable
-fun PantallaAsistente(controlador: ControladorAsistente, alAbrirAjustes: () -> Unit) {
+fun PantallaAsistente(
+    controlador: ControladorAsistente,
+    microfono: MicrofonoWindows? = null,
+    modoPrueba: Boolean = false,
+    alComando: (ComandoVoz) -> String = { "Comando no disponible." },
+    atajos: AtajosCecapi? = null,
+    lecturaAutomatica: Boolean = true,
+    alAbrirAjustes: () -> Unit,
+) {
     var pregunta by remember { mutableStateOf("") }
+    val focoPregunta = remember { FocusRequester() }
+    val focoMicrofono = remember { FocusRequester() }
     var error by remember { mutableStateOf<String?>(null) }
     val desplazamiento = rememberScrollState()
+    val alcanceMicrofono = rememberCoroutineScope()
+    var escuchando by remember { mutableStateOf(false) }
+    var avisoMicrofono by remember { mutableStateOf("") }
+    DisposableEffect(microfono) { onDispose { microfono?.detener() } }
 
     fun enviar() {
+        if (escuchando) return
         if (pregunta.isBlank()) {
             error = "Escribe una pregunta antes de enviarla."
+            controlador.confirmar("No hay pregunta para enviar.")
             return
         }
         if (controlador.enviar(pregunta)) {
@@ -197,12 +217,61 @@ fun PantallaAsistente(controlador: ControladorAsistente, alAbrirAjustes: () -> U
         }
     }
 
+    fun escuchar(soloComandos: Boolean) {
+        val motor = microfono ?: run { controlador.confirmar("Reconocimiento no disponible."); return }
+        if (escuchando) { motor.detener(); return }
+        if (controlador.esperando) { controlador.confirmar("Espera la respuesta antes de activar el micrófono."); return }
+        if (!motor.disponible) { controlador.confirmar("Reconocimiento no disponible en este sistema."); return }
+        controlador.callar()
+        escuchando = true
+        avisoMicrofono = "Preparando micrófono. Espera el sonido agudo antes de hablar."
+        alcanceMicrofono.launch {
+            try {
+                val resultado = motor.escuchar(soloComandos)
+                escuchando = false
+                when (resultado) {
+                    is CapturaVoz.Aviso -> { avisoMicrofono = resultado.mensaje; if (resultado.mensaje != "Escucha detenida.") controlador.confirmar(avisoMicrofono) }
+                    is CapturaVoz.Texto -> {
+                        val comando = if (soloComandos) identificarComando(resultado.texto) else null
+                        when (comando) {
+                            null -> { if (soloComandos) { avisoMicrofono = "Comando no reconocido. Intenta otra vez."; controlador.confirmar(avisoMicrofono) } else { pregunta = (pregunta + " " + resultado.texto).trim().take(2000); error = null; avisoMicrofono = "Dictado listo. Revisa la pregunta y pulsa Enviar."; controlador.confirmar("Dictado listo. Texto reconocido: ${resultado.texto}. Revisa antes de enviar.") } }
+                            ComandoVoz.ENVIAR -> { if (pregunta.isBlank()) { avisoMicrofono = "No hay pregunta para enviar."; controlador.confirmar(avisoMicrofono) } else { enviar(); avisoMicrofono = "Comando de envío reconocido." } }
+                            else -> avisoMicrofono = alComando(comando).ifBlank { "Comando reconocido." }
+                        }
+                    }
+                }
+            } finally { escuchando = false }
+        }
+    }
+
+    fun leerPregunta() {
+        if (escuchando) { controlador.callar(); microfono?.detener(); return }
+        controlador.confirmar(if (pregunta.isBlank()) "La pregunta está vacía." else "Pregunta escrita: $pregunta")
+    }
+    SideEffect {
+        atajos?.asistente = { tecla ->
+            when (tecla) {
+                Key.F2 -> { escuchar(false); true }
+                Key.F3 -> { escuchar(true); true }
+                Key.F4 -> { leerPregunta(); true }
+                Key.F7 -> { enviar(); true }
+                else -> false
+            }
+        }
+    }
+    DisposableEffect(atajos) { onDispose { atajos?.asistente = null } }
+    LaunchedEffect(Unit) {
+        if (microfono?.disponible == true) runCatching { focoMicrofono.requestFocus() }
+        else runCatching { focoPregunta.requestFocus() }
+    }
     LaunchedEffect(controlador.mensajes.size) { desplazamiento.animateScrollTo(desplazamiento.maxValue) }
 
     PantallaDividida(
         contenido = {
             Column(Modifier.fillMaxSize().padding(28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("Asistente de CECAPI", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
+                Text("ALIA, asistente de voz", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
+                Text("Lectura automática: ${if (lecturaAutomatica) "encendida" else "apagada"} (F6). F1: ayuda de teclado.", style = MaterialTheme.typography.bodyMedium)
+                if (modoPrueba) Text("MODO DE PRUEBA LOCAL · Respuestas simuladas, sin IA", color = Colores.Aviso, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                 controlador.estado?.let {
                     Text(
                         it,
@@ -250,7 +319,7 @@ fun PantallaAsistente(controlador: ControladorAsistente, alAbrirAjustes: () -> U
                         focusedLabelColor = Colores.Acento,
                         cursorColor = Colores.Acento,
                     ),
-                    modifier = Modifier.fillMaxWidth().onPreviewKeyEvent { evento ->
+                    modifier = Modifier.fillMaxWidth().focusRequester(focoPregunta).onPreviewKeyEvent { evento ->
                         // Enter envía; Mayúsculas + Enter hace salto de línea.
                         if (evento.type == KeyEventType.KeyDown && evento.key == Key.Enter && !evento.isShiftPressed) {
                             enviar()
@@ -260,22 +329,30 @@ fun PantallaAsistente(controlador: ControladorAsistente, alAbrirAjustes: () -> U
                         }
                     },
                 )
-                BotonGrande("Enviar pregunta", onClick = ::enviar, principal = true, habilitado = !controlador.esperando)
+                BotonGrande("Enviar pregunta (F7)", onClick = ::enviar, principal = true, habilitado = !controlador.esperando && !escuchando)
             }
         },
         panel = {
             Column(
-                Modifier.fillMaxSize().background(Colores.Superficie).padding(28.dp),
+                Modifier.fillMaxSize().background(Colores.Superficie).verticalScroll(rememberScrollState()).padding(28.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text("Acciones", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
-                BotonGrande("Repetir la respuesta (Ctrl + R)", onClick = controlador::repetir, modifier = Modifier.fillMaxWidth(), principal = true)
-                BotonGrande("Callar la voz (Esc)", onClick = controlador::callar, modifier = Modifier.fillMaxWidth())
-                BotonGrande("Nueva conversación", onClick = controlador::nuevaConversacion, modifier = Modifier.fillMaxWidth())
-                BotonGrande("Ajustes", onClick = alAbrirAjustes, modifier = Modifier.fillMaxWidth())
+                if (microfono != null) {
+                    BotonGrande(if (escuchando) "Detener micrófono" else "Dictar pregunta (Espacio / F2)", onClick = { escuchar(false) },
+                        modifier = Modifier.fillMaxWidth().focusRequester(focoMicrofono), principal = true, habilitado = microfono.disponible && !controlador.esperando)
+                    BotonGrande("Comando de voz (F3)", onClick = { escuchar(true) }, modifier = Modifier.fillMaxWidth(), habilitado = microfono.disponible && !controlador.esperando && !escuchando)
+                    if (avisoMicrofono.isNotBlank()) Text(avisoMicrofono, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+                    Text("Espera el sonido agudo para hablar. El sonido grave indica fin de escucha. Comandos: silencio; repite la respuesta; sube el volumen; baja el volumen; habla más rápido; habla más despacio; tono más agudo; tono más grave; abre ajustes; enviar pregunta.", style = MaterialTheme.typography.bodyMedium)
+                }
+                BotonGrande("Leer pregunta (F4)", onClick = ::leerPregunta, modifier = Modifier.fillMaxWidth(), habilitado = !escuchando)
+                BotonGrande("Repetir la respuesta (Ctrl + R)", onClick = controlador::repetir, modifier = Modifier.fillMaxWidth(), principal = true, habilitado = !escuchando)
+                BotonGrande("Callar la voz (Esc)", onClick = { microfono?.detener(); controlador.callar() }, modifier = Modifier.fillMaxWidth())
+                BotonGrande("Nueva conversación", onClick = controlador::nuevaConversacion, modifier = Modifier.fillMaxWidth(), habilitado = !escuchando)
+                BotonGrande("Ajustes (F5)", onClick = alAbrirAjustes, modifier = Modifier.fillMaxWidth(), habilitado = !escuchando)
                 Text(
-                    "Usa Tab para moverte entre botones y Enter para pulsarlos. El botón donde estás se ilumina.",
+                    "Espacio: dictar o detener con el foco en el micrófono. F1: ayuda. F2: dictar. F3: comando. F4: leer pregunta. F5: ajustes. F6: lectura automática. F7: enviar. Tab: navegar. Enter o espacio: activar controles.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Colores.TextoTenue,
                 )
@@ -310,10 +387,17 @@ fun PantallaAjustes(
     escala: Float,
     vozActiva: Boolean,
     velocidad: Int,
+    volumen: Int,
+    tono: Int,
+    nombreVoz: String,
+    vocesDisponibles: List<String>,
     vozDisponible: Boolean,
     alCambiarEscala: (Float) -> Unit,
     alCambiarVoz: (Boolean) -> Unit,
     alCambiarVelocidad: (Int) -> Unit,
+    alCambiarVolumen: (Int) -> Unit,
+    alCambiarTono: (Int) -> Unit,
+    alCambiarNombreVoz: (String) -> Unit,
     alProbarVoz: () -> Unit,
     alVolver: () -> Unit,
 ) {
@@ -323,8 +407,9 @@ fun PantallaAjustes(
 
             Text("Tamaño del texto: ${(escala * 100).toInt()} por ciento", style = MaterialTheme.typography.titleLarge)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BotonGrande("Más chico", onClick = { alCambiarEscala(escala - 0.25f) }, habilitado = escala > Preferencias.ESCALA_MINIMA)
-                BotonGrande("Más grande", onClick = { alCambiarEscala(escala + 0.25f) }, habilitado = escala < Preferencias.ESCALA_MAXIMA)
+                BotonGrande("Más chico", onClick = { alCambiarEscala((escala - 0.1f).coerceAtLeast(Preferencias.ESCALA_MINIMA)) }, habilitado = escala > Preferencias.ESCALA_MINIMA)
+                BotonGrande("Más grande", onClick = { alCambiarEscala((escala + 0.1f).coerceAtMost(Preferencias.ESCALA_MAXIMA)) }, habilitado = escala < Preferencias.ESCALA_MAXIMA)
+                BotonGrande("Texto normal (100 %)", onClick = { alCambiarEscala(1f) }, habilitado = escala != 1f)
             }
 
             Text("Voz: " + if (!vozDisponible) "no disponible en este sistema" else if (vozActiva) "encendida" else "apagada", style = MaterialTheme.typography.titleLarge)
@@ -333,10 +418,45 @@ fun PantallaAjustes(
                     BotonGrande(if (vozActiva) "Apagar la voz" else "Encender la voz", onClick = { alCambiarVoz(!vozActiva) })
                     BotonGrande("Probar la voz", onClick = alProbarVoz)
                 }
-                Text("Velocidad de la voz: $velocidad (de -5 a 5)", style = MaterialTheme.typography.titleLarge)
+                Text("Puedes apagar las lecturas automáticas (F6). Las confirmaciones de acciones solicitadas, las pruebas de voz y la repetición manual siguen disponibles.", style = MaterialTheme.typography.bodyMedium)
+                Text("Velocidad de la voz: $velocidad (de -10 a 10)", style = MaterialTheme.typography.titleLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BotonGrande("Más lenta", onClick = { alCambiarVelocidad(velocidad - 1) }, habilitado = velocidad > -5)
-                    BotonGrande("Más rápida", onClick = { alCambiarVelocidad(velocidad + 1) }, habilitado = velocidad < 5)
+                    BotonGrande("Más lenta", onClick = { alCambiarVelocidad(velocidad - 1) }, habilitado = velocidad > -10)
+                    BotonGrande("Más rápida", onClick = { alCambiarVelocidad(velocidad + 1) }, habilitado = velocidad < 10)
+                }
+                Text("Volumen de voz: $volumen % (más de 100 %: amplificación experimental)", style = MaterialTheme.typography.titleLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    BotonGrande("Bajar volumen", onClick = { alCambiarVolumen(volumen - 10) }, habilitado = volumen > 0)
+                    BotonGrande("Subir volumen", onClick = { alCambiarVolumen(volumen + 10) }, habilitado = volumen < 200)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    BotonGrande("Volumen medio (50 %)", onClick = { alCambiarVolumen(50) }, habilitado = volumen != 50)
+                    BotonGrande("Volumen normal (100 %)", onClick = { alCambiarVolumen(100) }, habilitado = volumen != 100)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    BotonGrande("Amplificar a 200 %", onClick = { alCambiarVolumen(200) }, habilitado = volumen != 200)
+                }
+                Text("Si falla la amplificación, la voz se reproducirá al 100 %. Aumenta gradualmente y evita volúmenes altos con audífonos.", style = MaterialTheme.typography.bodyMedium)
+                Text("Tono: $tono (de -50 a +50)", style = MaterialTheme.typography.titleLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    BotonGrande("Más grave", onClick = { alCambiarTono(tono - 10) }, habilitado = tono > -50)
+                    BotonGrande("Más agudo", onClick = { alCambiarTono(tono + 10) }, habilitado = tono < 50)
+                    BotonGrande("Tono normal", onClick = { alCambiarTono(0) }, habilitado = tono != 0)
+                }
+                Text("Tono experimental: Helena y Zira pueden ignorar este ajuste. Para un cambio audible de tono se necesitará otro motor de voz.", style = MaterialTheme.typography.bodyMedium)
+                Text("Voz seleccionada: ${nombreVoz.ifBlank { "Automática en español" }}", style = MaterialTheme.typography.titleLarge)
+                Text("Automática usa la voz española instalada (Helena en este equipo). Zira es una voz en inglés.", style = MaterialTheme.typography.bodyMedium)
+                if (vocesDisponibles.isNotEmpty()) {
+                    BotonGrande("Voz automática en español", onClick = { alCambiarNombreVoz("") })
+                    vocesDisponibles.forEach { opcion ->
+                        BotonGrande(
+                            if (opcion == nombreVoz) "$opcion (seleccionada)" else "Seleccionar $opcion",
+                            onClick = { alCambiarNombreVoz(opcion) },
+                            principal = opcion == nombreVoz,
+                        )
+                    }
+                } else {
+                    Text("No se pudo enumerar las voces. Se usará la predeterminada.", style = MaterialTheme.typography.bodyMedium)
                 }
             } else {
                 Text(
@@ -350,4 +470,40 @@ fun PantallaAjustes(
             BotonGrande("Volver al asistente", onClick = alVolver, principal = true)
         }
     }
+}
+
+
+/** Compatibilidad con las pruebas y llamadas anteriores a la ampliacion de ajustes.
+ * La interfaz principal usa la sobrecarga completa con volumen, tono y seleccion de voz.
+ */
+@Composable
+fun PantallaAjustes(
+    escala: Float,
+    vozActiva: Boolean,
+    velocidad: Int,
+    vozDisponible: Boolean,
+    alCambiarEscala: (Float) -> Unit,
+    alCambiarVoz: (Boolean) -> Unit,
+    alCambiarVelocidad: (Int) -> Unit,
+    alProbarVoz: () -> Unit,
+    alVolver: () -> Unit,
+) {
+    PantallaAjustes(
+        escala = escala,
+        vozActiva = vozActiva,
+        velocidad = velocidad,
+        volumen = 100,
+        tono = 0,
+        nombreVoz = "",
+        vocesDisponibles = emptyList(),
+        vozDisponible = vozDisponible,
+        alCambiarEscala = alCambiarEscala,
+        alCambiarVoz = alCambiarVoz,
+        alCambiarVelocidad = alCambiarVelocidad,
+        alCambiarVolumen = {},
+        alCambiarTono = {},
+        alCambiarNombreVoz = {},
+        alProbarVoz = alProbarVoz,
+        alVolver = alVolver,
+    )
 }
